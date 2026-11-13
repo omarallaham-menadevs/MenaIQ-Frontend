@@ -1,0 +1,27 @@
+import { Link, useSearchParams } from 'react-router-dom'
+import { sourcePageHref } from '../../data/sourcePrototype'
+import type { ConnectionState } from '../../data/integrations'
+import { X } from 'lucide-react'
+import { formatActivity, type Period } from '../../data/companyOverview'
+import { observationAge, sourceEvents, sourceHealth, sourceObservations, type ReportingSource } from '../../data/coverageHealth'
+import { Card } from '../ui/Card'
+import { EmptyState } from '../ui/EmptyState'
+import { SourceStatus } from './SourceStatus'
+
+export function SourceDetail({ source, period, missing, onClose, connectionStatus }: { source: ReportingSource | null; period: Period; missing: boolean; onClose: () => void; connectionStatus?: ConnectionState }) {
+  const [params] = useSearchParams()
+  if (!source) return <Card id="source-detail" className="min-w-0 [&]:p-6 2xl:min-h-[472px]"><EmptyState title={missing ? 'Source not found' : 'No source selected'} description="Select a reporting source to inspect its demo health, coverage, and collection events." /></Card>
+  const status = sourceHealth(source)
+  const events = sourceEvents(source, period)
+  const observations = sourceObservations(source, period)
+  return <Card id="source-detail" className="min-w-0 [&]:p-6 2xl:min-h-[472px]">
+    <div className="relative"><p className="text-xs leading-4 text-muted">Source Health</p><button type="button" aria-label="Deselect reporting source" onClick={onClose} className="absolute -right-1 -top-1 rounded p-1 text-muted hover:bg-canvas"><X size={15} aria-hidden="true" /></button></div>
+    <div className="mt-2 flex flex-wrap items-center justify-between gap-3"><h2 className="text-[22px] font-bold leading-7 tracking-tight">{source.name}</h2><SourceStatus status={status} /></div><p className="mt-2 text-[13px] leading-5 text-muted">{source.id === 'github' ? 'Commits, pull requests, reviews, approvals, and merges.' : source.description + '.'}</p>
+    <dl className="mt-4 grid gap-4 border-y border-line py-4 sm:grid-cols-[1fr_1.15fr_1.2fr] sm:divide-x sm:divide-line"><div><dt className="text-[11px] leading-5 text-muted">Connection</dt><dd className="mt-1 text-sm font-semibold">{connectionStatus ? `${connectionStatus} (demo)` : !source.configured ? 'Not Configured' : !source.reportingAvailable ? 'Not Available' : 'Connected (demo)'}</dd></div><div className="sm:pl-7"><dt className="text-[11px] leading-5 text-muted">Last successful observation</dt><dd className="mt-1 text-sm font-semibold"><span title={source.lastObservation ? `${formatActivity(source.lastObservation)} UTC (demo snapshot)` : undefined}>{observationAge(source.lastObservation)}</span></dd></div><div className="sm:pl-7"><dt className="text-[11px] leading-5 text-muted">{source.id === 'github' ? 'Sync status' : 'Reporting status'}</dt><dd className={`mt-1 text-sm font-semibold ${status === 'Healthy' ? 'text-accent' : status === 'Delayed' || status === 'Degraded' ? 'text-warning' : 'text-muted'}`}>{status}</dd></div></dl>
+    <section aria-labelledby="sync-activity-heading" className="mt-5"><h3 id="sync-activity-heading" className="text-base font-semibold">{source.id === 'github' ? 'Sync Activity' : 'Reporting Activity'}</h3><p className="mt-1.5 text-xs leading-5 text-muted">Recent activity and collection status for this source.</p><div className="mt-5 rounded-xl border border-line bg-canvas/40 px-4 py-3"><div className="grid grid-cols-[minmax(0,1fr)_94px] gap-2 border-b border-line pb-2 text-[9px] font-medium uppercase text-muted sm:grid-cols-[minmax(0,1fr)_100px_94px]"><span>Event</span><span className="hidden sm:block">Time</span><span className="text-center">Status</span></div>{events.length ? <EventRow event={events[0]} /> : <p className="py-4 text-xs text-muted">{!source.reportingAvailable || !source.configured ? 'Reporting events Not Available. No telemetry is inferred.' : 'Zero observed reporting events in this period.'}</p>}</div>
+    {events.length > 1 && <details className="mt-2 rounded text-[11px] text-muted"><summary className="w-fit cursor-pointer rounded py-1 hover:text-accent">View demo reporting history ({events.length} events)</summary><ul className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-line px-3">{events.slice(1).map(event => <li key={event.id}><EventRow event={event} /></li>)}</ul></details>}
+    <p aria-live="polite" className="mt-3 text-[11px] leading-5 text-muted">Last {period} days: {observations.count === null ? 'Not Available' : observations.count.toLocaleString('en-US')} observed demo {observations.label}. Health reflects the shared demo source state.</p></section>
+    <div className="mt-4 border-t border-line pt-4"><Link to={sourcePageHref('integrations',source.id,params)} className="inline-flex min-h-10 items-center rounded-lg border border-line bg-surface px-4 text-xs font-medium text-accent hover:bg-canvas">View Integration Settings</Link></div>
+  </Card>
+}
+function EventRow({ event }: { event: ReturnType<typeof sourceEvents>[number] }) { return <div className="grid grid-cols-[minmax(0,1fr)_94px] items-center gap-2 py-3 text-[11px] leading-5 sm:grid-cols-[minmax(0,1fr)_100px_94px]"><span className="min-w-0 break-words">{event.title}<time dateTime={event.at} className="mt-1 block text-muted sm:hidden" title={`${formatActivity(event.at)} UTC`}>{observationAge(event.at)}</time></span><time dateTime={event.at} className="hidden text-muted sm:block" title={`${formatActivity(event.at)} UTC`}>{observationAge(event.at)}</time><SourceStatus status={event.status} /></div> }

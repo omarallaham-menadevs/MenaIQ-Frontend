@@ -1,0 +1,30 @@
+﻿@import "@fontsource-variable/inter/wght.css";
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --color-accent: #00833F;
+  --color-chart: #00920C;
+  --color-canvas: #F7F8FA;
+  --color-ink: #090D17;
+  --color-muted: #565B69;
+  --color-line: #DEE2E9;
+  --color-selected: #E7F8EF;
+  --color-surface: #FFFFFF;
+  --color-neutral: #F2F3F5;
+  --color-success: #007A13;
+  --color-success-soft: #DFF7EA;
+  --color-warning: #B43700;
+  --color-warning-soft: #FFF0E4;
+  --color-danger: #D30000;
+  --color-danger-soft: #FFE4E6;
+}
+@layer base {
+  body { @apply m-0 bg-canvas font-sans text-ink antialiased; }
+  button:not(:disabled), select { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
+  ::selection { background: var(--color-selected); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
